@@ -26,9 +26,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 # ── DB helper ────────────────────────────────────────────────────────────────
 def get_db():
     return mysql.connector.connect(
-        host="localhost", user="root",
-        password="drashtee098",
-        database="student_performance"
+        host=os.getenv("DB_HOST", "localhost"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", "drashtee098"),
+        database=os.getenv("DB_NAME", "student_performance"),
+        port=int(os.getenv("DB_PORT", "3306"))
     )
 
 # ── Auth helpers ─────────────────────────────────────────────────────────────
