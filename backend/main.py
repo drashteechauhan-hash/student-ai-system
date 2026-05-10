@@ -200,10 +200,6 @@ def save_task(data: TaskToggle, current_user=Depends(get_current_user)):
 
 @app.post("/update-progress")
 def update_progress(data: ProgressUpdate, current_user=Depends(get_current_user)):
-    """
-    Called by StudyPlanGenerator whenever XP or streak changes.
-    Upserts into user_progress so Dashboard /my-progress always shows live data.
-    """
     try:
         conn = get_db()
         cursor = conn.cursor()
@@ -236,8 +232,6 @@ def get_progress(current_user=Depends(get_current_user)):
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
-
-        # Ensure table exists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_progress (
                 user_id INT PRIMARY KEY,
@@ -247,36 +241,25 @@ def get_progress(current_user=Depends(get_current_user)):
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
-
-        # Get live XP + streak from user_progress (written by /update-progress)
         cursor.execute(
             "SELECT total_xp, streak_count FROM user_progress WHERE user_id = %s",
             (current_user["id"],)
         )
         progress_row = cursor.fetchone()
-
-        # Also fetch task-level data (kept for backward compatibility)
         cursor.execute(
             "SELECT week_idx, task_idx, is_done, xp_earned FROM study_progress WHERE user_id = %s",
             (current_user["id"],)
         )
         rows = cursor.fetchall()
-
-        # Streak days from streaks table (kept for backward compatibility)
         cursor.execute(
             "SELECT date_key FROM streaks WHERE user_id = %s ORDER BY date_key DESC LIMIT 30",
             (current_user["id"],)
         )
         streak_days = [r["date_key"] for r in cursor.fetchall()]
-
         cursor.close(); conn.close()
-
         task_done = {f"{r['week_idx']}-{r['task_idx']}": bool(r['is_done']) for r in rows}
-
-        # Prefer user_progress values (synced in real-time) over computed totals
         total_xp     = progress_row["total_xp"]     if progress_row else sum(r['xp_earned'] for r in rows if r['is_done'])
         streak_count = progress_row["streak_count"]  if progress_row else 0
-
         return {
             "task_done": task_done,
             "total_xp": total_xp,
@@ -435,7 +418,6 @@ def predict(data: PredictInput, current_user=Depends(get_current_user)):
         wellness   = round((5-data.stress_level+data.motivation_level+5-data.exam_anxiety+data.self_confidence+data.focus_ability)/5, 1)
         engagement = round(data.study_hours*0.4+data.study_consistency*0.3+data.attendance/20*0.3, 1)
 
-        # Save prediction to DB
         try:
             conn = get_db()
             cursor = conn.cursor()
@@ -621,7 +603,6 @@ def delete_plan(current_user=Depends(get_current_user)):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM study_plans WHERE user_id = %s", (current_user["id"],))
         cursor.execute("DELETE FROM study_progress WHERE user_id = %s", (current_user["id"],))
-        # Also reset user_progress so XP and streak go back to 0 on dashboard
         cursor.execute("""
             INSERT INTO user_progress (user_id, total_xp, streak_count)
             VALUES (%s, 0, 0)
@@ -631,3 +612,19 @@ def delete_plan(current_user=Depends(get_current_user)):
         return {"deleted": True}
     except Exception as e:
         raise HTTPException(500, str(e))
+
+# ════════════════════════════════════════════════════════════════════════════
+# TEMP: RESET ADMIN — DELETE THIS ROUTE AFTER USE!
+# ════════════════════════════════════════════════════════════════════════════
+
+@app.get("/reset-admin")
+def reset_admin():
+    hashed = hash_pw("admin123")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE users SET password_hash = %s, role = 'admin' WHERE email = 'drashteechauhan@gmail.com'",
+        (hashed,)
+    )
+    conn.commit(); cursor.close(); conn.close()
+    return {"done": True}
