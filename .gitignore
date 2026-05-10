@@ -1,7 +1,10 @@
+# Dependencies
 node_modules/
 frontend/node_modules/
+
+# Build artifacts & zips
 *.zip
-*.pkl
-venv/
-__pycache__/
-frontend/.cache/
+frontend.zip
+
+# Cache
+.cache/
