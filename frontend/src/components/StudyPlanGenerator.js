@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
-const API = 'http://localhost:8000';
+const API = process.env.REACT_APP_API_URL || 'https://student-ai-system-kgq0.onrender.com'
+
+;
 
 const MRU_BRANCHES = {
   'CSE (Core)': {

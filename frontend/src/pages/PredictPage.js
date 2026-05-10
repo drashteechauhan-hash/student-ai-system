@@ -4,7 +4,9 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
-const API = 'http://localhost:8000';
+const API = process.env.REACT_APP_API_URL || 'https://student-ai-system-kgq0.onrender.com'
+
+;
 
 const F = ({label,name,value,options,onChange}) => (
   <div className="form-group">

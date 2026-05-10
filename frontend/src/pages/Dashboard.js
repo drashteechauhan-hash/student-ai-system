@@ -7,7 +7,9 @@ import {
   CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend,
 } from 'recharts';
 
-const API = 'http://localhost:8000';
+const API = process.env.REACT_APP_API_URL || 'https://student-ai-system-kgq0.onrender.com'
+
+;
 
 function ProgressRing({ pct, color, size = 64, stroke = 6 }) {
   const r = (size - stroke * 2) / 2;

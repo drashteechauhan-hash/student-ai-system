@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 
-const API = 'http://localhost:8000';
+const API = process.env.REACT_APP_API_URL || 'https://student-ai-system-kgq0.onrender.com'
+
+;
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },

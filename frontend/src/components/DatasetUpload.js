@@ -2,7 +2,9 @@ import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API = 'http://localhost:8000';
+const API = process.env.REACT_APP_API_URL || 'https://student-ai-system-kgq0.onrender.com'
+
+;
 
 export default function DatasetUpload() {
   const [dragging, setDragging] = useState(false);

@@ -3,7 +3,9 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import StudyPlanGenerator from '../components/StudyPlanGenerator';
 
-const API = 'http://localhost:8000';
+const API = process.env.REACT_APP_API_URL || 'https://student-ai-system-kgq0.onrender.com'
+
+;
 
 function SignOutBtn({ onLogout }) {
   return (
