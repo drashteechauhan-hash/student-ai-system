@@ -34,8 +34,13 @@ def get_db():
     )
 
 # ── Auth helpers ─────────────────────────────────────────────────────────────
-def hash_pw(pw):     return pwd_context.hash(pw)
-def verify_pw(p, h): return pwd_context.verify(p, h)
+def hash_pw(password: str):
+    password = password[:72]  # bcrypt fix
+    return pwd_context.hash(password)
+
+def verify_pw(password: str, hashed: str):
+    password = password[:72]  # bcrypt fix
+    return pwd_context.verify(password, hashed)
 
 def make_token(user_id: int, email: str):
     exp = datetime.utcnow() + timedelta(days=30)
