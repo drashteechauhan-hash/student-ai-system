@@ -1,5 +1,12 @@
 {
   "performance": {
+    "Logistic Regression": {
+      "accuracy": 0.9583,
+      "precision": 0.9583,
+      "recall": 0.9583,
+      "f1_score": 0.9583,
+      "cv_mean": 0.8866
+    },
     "Random Forest": {
       "accuracy": 1.0,
       "precision": 1.0,
@@ -7,14 +14,14 @@
       "f1_score": 1.0,
       "cv_mean": 0.9915
     },
-    "Gradient Boosting": {
-      "accuracy": 1.0,
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1_score": 1.0,
-      "cv_mean": 1.0
+    "SVM": {
+      "accuracy": 0.9167,
+      "precision": 0.9182,
+      "recall": 0.9167,
+      "f1_score": 0.9138,
+      "cv_mean": 0.8362
     },
-    "best_model": "Gradient Boosting",
+    "best_model": "Random Forest",
     "classes": [
       "High",
       "Low",
@@ -22,6 +29,13 @@
     ]
   },
   "risk": {
+    "Logistic Regression": {
+      "accuracy": 0.8542,
+      "precision": 0.8567,
+      "recall": 0.8542,
+      "f1_score": 0.855,
+      "cv_mean": 0.7523
+    },
     "Random Forest": {
       "accuracy": 0.9167,
       "precision": 0.9237,
@@ -29,14 +43,14 @@
       "f1_score": 0.9087,
       "cv_mean": 0.8868
     },
-    "Gradient Boosting": {
-      "accuracy": 0.9167,
-      "precision": 0.9318,
-      "recall": 0.9167,
-      "f1_score": 0.9,
-      "cv_mean": 0.9369
+    "SVM": {
+      "accuracy": 0.6875,
+      "precision": 0.7171,
+      "recall": 0.6875,
+      "f1_score": 0.6625,
+      "cv_mean": 0.7271
     },
-    "best_model": "Gradient Boosting",
+    "best_model": "Random Forest",
     "classes": [
       "High Risk",
       "Low Risk",

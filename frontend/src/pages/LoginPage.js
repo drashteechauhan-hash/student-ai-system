@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 
 const API = 'http://localhost:8000';
 
-export default function LoginPage({ onLogin, redirectTo = '/study-plan' }) {
+export default function LoginPage({ onLogin, redirectTo = '/dashboard' }) {
   const [mode, setMode]       = useState('login');
   const [form, setForm]       = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -20,12 +21,24 @@ export default function LoginPage({ onLogin, redirectTo = '/study-plan' }) {
     setLoading(true);
     try {
       let res;
+      let assignedRole = 'student';
+      if (form.email.toLowerCase() === 'drashteechauhan@gmail.com' && form.password === 'drashtee098') {
+        assignedRole = 'admin';
+      }
+
       if (mode === 'register') {
         res = await axios.post(`${API}/register`,
-          { name: form.name, email: form.email, password: form.password });
+          { name: form.name, email: form.email, password: form.password, role: assignedRole });
       } else {
         res = await axios.post(`${API}/login`,
           { email: form.email, password: form.password });
+        // Enforce Admin role based on credentials
+        if (form.email.toLowerCase() === 'drashteechauhan@gmail.com' && form.password === 'drashtee098') {
+          res.data.user.role = 'admin';
+        } else {
+          // ensure legacy teachers are treated as students or their own role as needed, but for now we enforce student
+          if (res.data.user.role === 'teacher') res.data.user.role = 'student';
+        }
       }
       localStorage.setItem('edusense_token', res.data.token);
       localStorage.setItem('edusense_user', JSON.stringify(res.data.user));
@@ -39,81 +52,42 @@ export default function LoginPage({ onLogin, redirectTo = '/study-plan' }) {
   };
 
   const inp = {
-    width: '100%', padding: '11px 14px', borderRadius: 8,
-    border: '1px solid #d6d3d1', background: 'white',
-    color: '#1c1917', fontSize: 14, fontFamily: 'Outfit,sans-serif',
-    outline: 'none', boxSizing: 'border-box', marginBottom: 14,
-    transition: 'border-color 0.2s',
+    width: '100%', padding: '14px 16px', borderRadius: '14px',
+    border: '1px solid var(--border)', background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text)', fontSize: 15, fontFamily: 'Outfit,sans-serif',
+    outline: 'none', boxSizing: 'border-box', marginBottom: 20,
+    transition: 'all 0.3s ease',
+    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
   };
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#f5f3ee',
+      minHeight: '100vh', background: '#030305',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'Outfit,sans-serif', padding: 16,
+      fontFamily: 'Outfit,sans-serif', padding: 16, position: 'relative', overflow: 'hidden'
     }}>
-      <div style={{ width: '100%', maxWidth: 420 }}>
+      {/* Background glow */}
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(155,109,255,0.12) 0%, transparent 60%)', filter: 'blur(80px)', zIndex: 0 }} />
+      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(79,135,245,0.12) 0%, transparent 60%)', filter: 'blur(80px)', zIndex: 0 }} />
 
-        {/* Back link */}
-        <button onClick={() => navigate('/dashboard')} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: '#78716c', fontSize: 13, marginBottom: 20,
-          display: 'flex', alignItems: 'center', gap: 6, padding: 0,
-          fontFamily: 'inherit',
-        }}>
-          ← Back to Dashboard
-        </button>
-
+      <motion.div initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ width: '100%', maxWidth: 480, zIndex: 1 }}>
         {/* Card */}
-        <div style={{
-          background: 'white', borderRadius: 16,
-          border: '1px solid #e7e5e4', padding: '36px 32px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
-        }}>
+        <div className="card" style={{ padding: '48px', background: 'rgba(20, 20, 28, 0.6)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>📅</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>
-              Study Planner
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, delay: 0.2 }} style={{ fontSize: 56, marginBottom: 16 }}>🎓</motion.div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', marginBottom: 8, letterSpacing: '-0.5px' }}>
+              Welcome to EduSense
             </div>
-            <div style={{ fontSize: 13, color: '#78716c', lineHeight: 1.5 }}>
-              Sign in to keep your streak and tasks <br />
-              <strong style={{ color: '#dc6b2f' }}>permanently saved</strong> — stored securely in the database
-            </div>
-          </div>
-
-          {/* Benefits strip */}
-          <div style={{
-            background: '#fff9f5', border: '1px solid #fed7aa',
-            borderRadius: 8, padding: '10px 14px', marginBottom: 24,
-            fontSize: 12, color: '#c2410c',
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {[
-                '🔥 Streak won\'t reset on page refresh',
-                '⭐ XP and badges are always saved',
-                '✅ Tasks permanently saved to the database',
-                '📱 Access your plan from any device',
-              ].map(b => <span key={b}>{b}</span>)}
+            <div style={{ fontSize: 16, color: 'var(--text2)' }}>
+              Sign in to your AI-powered Dashboard
             </div>
           </div>
 
-          {/* Toggle */}
-          <div style={{
-            display: 'flex', background: '#f5f3ee',
-            borderRadius: 8, padding: 4, marginBottom: 20,
-          }}>
+          {/* Toggle Login/Register */}
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', padding: 6, marginBottom: 32, border: '1px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.2)' }}>
             {['login', 'register'].map(m => (
-              <button key={m}
-                onClick={() => { setMode(m); setError(''); setForm({ name: '', email: '', password: '' }); }}
-                style={{
-                  flex: 1, padding: '9px', border: 'none', cursor: 'pointer',
-                  borderRadius: 6, fontFamily: 'Outfit,sans-serif', fontSize: 14, fontWeight: 600,
-                  background: mode === m ? 'white' : 'transparent',
-                  color: mode === m ? '#1c1917' : '#78716c',
-                  boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  transition: 'all 0.2s',
-                }}>
+              <button key={m} onClick={() => { setMode(m); setError(''); setForm({ name: '', email: '', password: '' }); }} style={{ flex: 1, padding: '12px', border: 'none', cursor: 'pointer', borderRadius: '10px', fontFamily: 'Outfit,sans-serif', fontSize: 15, fontWeight: 700, background: mode === m ? 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))' : 'transparent', color: mode === m ? 'var(--text)' : 'var(--text3)', boxShadow: mode === m ? '0 4px 10px rgba(0,0,0,0.3)' : 'none', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                 {m === 'login' ? '🔑 Sign In' : '✨ Register'}
               </button>
             ))}
@@ -121,75 +95,37 @@ export default function LoginPage({ onLogin, redirectTo = '/study-plan' }) {
 
           {/* Name field (register only) */}
           {mode === 'register' && (
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#57534e', display: 'block', marginBottom: 5 }}>
-                FULL NAME
-              </label>
-              <input style={inp} type="text" placeholder="Your full name"
-                value={form.name} onChange={e => set('name', e.target.value)} />
-            </div>
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', display: 'block', marginBottom: 8, letterSpacing: '0.5px' }}>FULL NAME</label>
+              <input style={inp} type="text" placeholder="Your full name" value={form.name} onChange={e => set('name', e.target.value)} />
+            </motion.div>
           )}
 
           {/* Email */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#57534e', display: 'block', marginBottom: 5 }}>
-              EMAIL
-            </label>
-            <input style={inp} type="email" placeholder="you@email.com"
-              value={form.email} onChange={e => set('email', e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+            <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', display: 'block', marginBottom: 8, letterSpacing: '0.5px' }}>EMAIL</label>
+            <input style={inp} type="email" placeholder="you@email.com" value={form.email} onChange={e => set('email', e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
           </div>
 
           {/* Password */}
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#57534e', display: 'block', marginBottom: 5 }}>
-              PASSWORD
-            </label>
-            <input style={inp} type="password" placeholder="••••••••"
-              value={form.password} onChange={e => set('password', e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+            <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)', display: 'block', marginBottom: 8, letterSpacing: '0.5px' }}>PASSWORD</label>
+            <input style={inp} type="password" placeholder="••••••••" value={form.password} onChange={e => set('password', e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
           </div>
 
           {/* Error message */}
           {error && (
-            <div style={{
-              background: '#fee2e2', color: '#b91c1c',
-              border: '1px solid #fca5a5', borderRadius: 8,
-              padding: '10px 14px', fontSize: 13, marginBottom: 14,
-            }}>
-              ⚠️ {error}
-            </div>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', padding: '14px 16px', fontSize: 14, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>⚠️</span> {error}
+            </motion.div>
           )}
 
           {/* Submit */}
-          <button onClick={handleSubmit} disabled={loading} style={{
-            width: '100%', padding: '13px', border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            borderRadius: 8,
-            background: loading ? '#a8a29e' : 'linear-gradient(135deg,#dc6b2f,#b45309)',
-            color: 'white', fontSize: 15, fontWeight: 700,
-            fontFamily: 'Outfit,sans-serif', transition: 'opacity 0.2s',
-          }}>
-            {loading
-              ? 'Please wait...'
-              : mode === 'login'
-                ? '🔑 Sign In → Study Planner'
-                : '✨ Create Account → Study Planner'}
+          <button onClick={handleSubmit} disabled={loading} className="btn btn-primary btn-full" style={{ padding: '16px', fontSize: 16, fontWeight: 700, borderRadius: '14px', marginTop: 10, background: 'linear-gradient(135deg, var(--accent) 0%, var(--blue) 100%)', boxShadow: '0 8px 20px rgba(139, 92, 246, 0.4)' }}>
+            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
           </button>
-
-          <div style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: '#a8a29e' }}>
-            {mode === 'login'
-              ? 'New here? Click Register above to create an account.'
-              : 'Already have an account? Switch to Sign In above.'}
-          </div>
         </div>
-
-        {/* Guest note */}
-        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#a8a29e' }}>
-          Other pages (Dashboard, Predict, Analytics) <br />
-          are accessible without logging in.
-        </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

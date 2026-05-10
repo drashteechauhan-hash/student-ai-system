@@ -1,5 +1,6 @@
 import React from 'react';
 import WhatIfSimulator from '../components/WhatIfSimulator';
+
 export default function WhatIfPage() {
   return (
     <div className="animate-fade">

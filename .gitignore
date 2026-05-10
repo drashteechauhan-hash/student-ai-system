@@ -1,7 +1,7 @@
-# Add node_modules and large files to .gitignore
-echo "node_modules/" >> .gitignore
-echo "frontend/node_modules/" >> .gitignore
-echo "*.zip" >> .gitignore
-echo "*.pkl" >> .gitignore
-echo "venv/" >> .gitignore
-echo "__pycache__/" >> .gitignore
+node_modules/
+frontend/node_modules/
+*.zip
+*.pkl
+venv/
+__pycache__/
+frontend/.cache/

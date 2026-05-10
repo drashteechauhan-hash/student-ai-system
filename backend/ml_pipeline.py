@@ -5,7 +5,9 @@ warnings.filterwarnings('ignore')
 
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression          # ← NEW
+from sklearn.ensemble import RandomForestClassifier          # ← KEPT
+from sklearn.svm import SVC                                  # ← NEW (replaces GradientBoosting)
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.impute import SimpleImputer
 
@@ -39,7 +41,7 @@ def get_metrics(model, X_test, y_test, X, y):
 def train_models():
     df = load_data()
 
-    # ── PERFORMANCE MODEL ──
+    # ── PERFORMANCE MODEL ──────────────────────────────────────────────────
     target_col = [c for c in df.columns if "expected" in c.lower()][0]
 
     def cat_perf(x):
@@ -66,34 +68,43 @@ def train_models():
 
     X_tr, X_te, y_tr, y_te = train_test_split(X_scaled, y_enc, test_size=0.2, random_state=42)
 
+    # ── Train all 3 algorithms ──
+    lr = LogisticRegression(max_iter=1000, random_state=42)
+    lr.fit(X_tr, y_tr)
+
     rf = RandomForestClassifier(n_estimators=100, random_state=42)
     rf.fit(X_tr, y_tr)
 
-    gb = GradientBoostingClassifier(n_estimators=100, random_state=42)
-    gb.fit(X_tr, y_tr)
+    svm = SVC(kernel='rbf', probability=True, random_state=42)
+    svm.fit(X_tr, y_tr)
 
-    rf_metrics = get_metrics(rf, X_te, y_te, X_scaled, y_enc)
-    gb_metrics = get_metrics(gb, X_te, y_te, X_scaled, y_enc)
+    lr_metrics  = get_metrics(lr,  X_te, y_te, X_scaled, y_enc)
+    rf_metrics  = get_metrics(rf,  X_te, y_te, X_scaled, y_enc)
+    svm_metrics = get_metrics(svm, X_te, y_te, X_scaled, y_enc)
 
-    best_perf = gb if gb_metrics['accuracy'] >= rf_metrics['accuracy'] else rf
-    best_perf_name = "Gradient Boosting" if gb_metrics['accuracy'] >= rf_metrics['accuracy'] else "Random Forest"
+    # ── Pick best model ──
+    perf_candidates = {
+        "Logistic Regression": (lr,  lr_metrics),
+        "Random Forest":       (rf,  rf_metrics),
+        "SVM":                 (svm, svm_metrics),
+    }
+    best_perf_name = max(perf_candidates, key=lambda k: perf_candidates[k][1]['accuracy'])
+    best_perf = perf_candidates[best_perf_name][0]
 
     joblib.dump(best_perf, os.path.join(MODEL_DIR, "performance_model.pkl"))
-    joblib.dump(scaler, os.path.join(MODEL_DIR, "performance_scaler.pkl"))
-    joblib.dump(le_perf, os.path.join(MODEL_DIR, "performance_encoder.pkl"))
-    joblib.dump(imputer, os.path.join(MODEL_DIR, "imputer.pkl"))
-    joblib.dump(num_cols, os.path.join(MODEL_DIR, "feature_names.pkl"))
+    joblib.dump(scaler,    os.path.join(MODEL_DIR, "performance_scaler.pkl"))
+    joblib.dump(le_perf,   os.path.join(MODEL_DIR, "performance_encoder.pkl"))
+    joblib.dump(imputer,   os.path.join(MODEL_DIR, "imputer.pkl"))
+    joblib.dump(num_cols,  os.path.join(MODEL_DIR, "feature_names.pkl"))
 
-    # ── RISK MODEL ──
+    # ── RISK MODEL ─────────────────────────────────────────────────────────
     def cat_risk(row):
         score = 0
         try:
             if float(row.get(target_col, 70)) < 60: score += 2
             if float(row.get('Average Attendance (%)', 75)) < 70: score += 2
-            stress = float(row.get('Stress Level', 3))
-            if stress >= 4: score += 1
-            motivation = float(row.get('Motivation Level', 3))
-            if motivation <= 2: score += 1
+            if float(row.get('Stress Level', 3)) >= 4: score += 1
+            if float(row.get('Motivation Level', 3)) <= 2: score += 1
         except:
             pass
         return "High Risk" if score >= 4 else ("Moderate Risk" if score >= 2 else "Low Risk")
@@ -106,44 +117,65 @@ def train_models():
 
     X_tr2, X_te2, y_tr2, y_te2 = train_test_split(X_scaled, y_risk_enc, test_size=0.2, random_state=42)
 
-    rf_risk = RandomForestClassifier(n_estimators=100, random_state=42)
+    lr_risk  = LogisticRegression(max_iter=1000, random_state=42)
+    lr_risk.fit(X_tr2, y_tr2)
+
+    rf_risk  = RandomForestClassifier(n_estimators=100, random_state=42)
     rf_risk.fit(X_tr2, y_tr2)
 
-    gb_risk = GradientBoostingClassifier(n_estimators=100, random_state=42)
-    gb_risk.fit(X_tr2, y_tr2)
+    svm_risk = SVC(kernel='rbf', probability=True, random_state=42)
+    svm_risk.fit(X_tr2, y_tr2)
 
-    rf_risk_m = get_metrics(rf_risk, X_te2, y_te2, X_scaled, y_risk_enc)
-    gb_risk_m = get_metrics(gb_risk, X_te2, y_te2, X_scaled, y_risk_enc)
+    lr_risk_m  = get_metrics(lr_risk,  X_te2, y_te2, X_scaled, y_risk_enc)
+    rf_risk_m  = get_metrics(rf_risk,  X_te2, y_te2, X_scaled, y_risk_enc)
+    svm_risk_m = get_metrics(svm_risk, X_te2, y_te2, X_scaled, y_risk_enc)
 
-    best_risk = gb_risk if gb_risk_m['accuracy'] >= rf_risk_m['accuracy'] else rf_risk
-    best_risk_name = "Gradient Boosting" if gb_risk_m['accuracy'] >= rf_risk_m['accuracy'] else "Random Forest"
+    risk_candidates = {
+        "Logistic Regression": (lr_risk,  lr_risk_m),
+        "Random Forest":       (rf_risk,  rf_risk_m),
+        "SVM":                 (svm_risk, svm_risk_m),
+    }
+    best_risk_name = max(risk_candidates, key=lambda k: risk_candidates[k][1]['accuracy'])
+    best_risk = risk_candidates[best_risk_name][0]
 
     joblib.dump(best_risk, os.path.join(MODEL_DIR, "risk_model.pkl"))
-    joblib.dump(scaler, os.path.join(MODEL_DIR, "risk_scaler.pkl"))
-    joblib.dump(le_risk, os.path.join(MODEL_DIR, "risk_encoder.pkl"))
+    joblib.dump(scaler,    os.path.join(MODEL_DIR, "risk_scaler.pkl"))
+    joblib.dump(le_risk,   os.path.join(MODEL_DIR, "risk_encoder.pkl"))
 
-    # ── SAVE METRICS ──
+    # ── SAVE METRICS ───────────────────────────────────────────────────────
     metrics = {
         "performance": {
-            "Random Forest": rf_metrics,
-            "Gradient Boosting": gb_metrics,
-            "best_model": best_perf_name,
-            "classes": list(le_perf.classes_),
+            "Logistic Regression": lr_metrics,
+            "Random Forest":       rf_metrics,
+            "SVM":                 svm_metrics,
+            "best_model":          best_perf_name,
+            "classes":             list(le_perf.classes_),
         },
         "risk": {
-            "Random Forest": rf_risk_m,
-            "Gradient Boosting": gb_risk_m,
-            "best_model": best_risk_name,
-            "classes": list(le_risk.classes_),
+            "Logistic Regression": lr_risk_m,
+            "Random Forest":       rf_risk_m,
+            "SVM":                 svm_risk_m,
+            "best_model":          best_risk_name,
+            "classes":             list(le_risk.classes_),
         }
     }
 
     with open(os.path.join(MODEL_DIR, "metrics.json"), "w") as f:
         json.dump(metrics, f, indent=2)
 
-    print(f"✅ Performance model: {best_perf_name} — Accuracy: {max(rf_metrics['accuracy'], gb_metrics['accuracy']):.2%}")
-    print(f"✅ Risk model: {best_risk_name} — Accuracy: {max(rf_risk_m['accuracy'], gb_risk_m['accuracy']):.2%}")
-    print("✅ All models saved!")
+    print(f"\n📊 Performance Model Results:")
+    print(f"   Logistic Regression → Accuracy: {lr_metrics['accuracy']:.2%}")
+    print(f"   Random Forest       → Accuracy: {rf_metrics['accuracy']:.2%}")
+    print(f"   SVM                 → Accuracy: {svm_metrics['accuracy']:.2%}")
+    print(f"   ✅ Best: {best_perf_name}")
+
+    print(f"\n📊 Risk Model Results:")
+    print(f"   Logistic Regression → Accuracy: {lr_risk_m['accuracy']:.2%}")
+    print(f"   Random Forest       → Accuracy: {rf_risk_m['accuracy']:.2%}")
+    print(f"   SVM                 → Accuracy: {svm_risk_m['accuracy']:.2%}")
+    print(f"   ✅ Best: {best_risk_name}")
+
+    print("\n✅ All models saved!")
 
 if __name__ == "__main__":
     train_models()

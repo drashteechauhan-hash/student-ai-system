@@ -60,14 +60,14 @@ def load_artifacts():
     a = {}
     try:
         for k, fname in [
-            ("perf_model","performance_model.pkl"),
-            ("risk_model","risk_model.pkl"),
-            ("perf_scaler","performance_scaler.pkl"),
-            ("risk_scaler","risk_scaler.pkl"),
-            ("perf_encoder","performance_encoder.pkl"),
-            ("risk_encoder","risk_encoder.pkl"),
-            ("imputer","imputer.pkl"),
-            ("feature_names","feature_names.pkl")
+            ("perf_model",    "performance_model.pkl"),
+            ("risk_model",    "risk_model.pkl"),
+            ("perf_scaler",   "performance_scaler.pkl"),
+            ("risk_scaler",   "risk_scaler.pkl"),
+            ("perf_encoder",  "performance_encoder.pkl"),
+            ("risk_encoder",  "risk_encoder.pkl"),
+            ("imputer",       "imputer.pkl"),
+            ("feature_names", "feature_names.pkl")
         ]:
             a[k] = joblib.load(os.path.join(MODEL_DIR, fname))
         with open(os.path.join(MODEL_DIR, "metrics.json")) as f:
@@ -90,6 +90,7 @@ class RegisterInput(BaseModel):
     name: str
     email: str
     password: str
+    role: str = "student"
 
 class LoginInput(BaseModel):
     email: str
@@ -100,14 +101,13 @@ def register(data: RegisterInput):
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
-        # Check if email exists
         cursor.execute("SELECT id FROM users WHERE email = %s", (data.email,))
         if cursor.fetchone():
             raise HTTPException(400, "Email already registered")
         hashed = hash_pw(data.password)
         cursor.execute(
-            "INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)",
-            (data.name.strip(), data.email.strip().lower(), hashed)
+            "INSERT INTO users (name, email, password_hash, role) VALUES (%s, %s, %s, %s)",
+            (data.name.strip(), data.email.strip().lower(), hashed, data.role.strip().lower())
         )
         conn.commit()
         user_id = cursor.lastrowid
@@ -115,7 +115,7 @@ def register(data: RegisterInput):
         token = make_token(user_id, data.email)
         return {
             "token": token,
-            "user": {"id": user_id, "name": data.name, "email": data.email}
+            "user": {"id": user_id, "name": data.name, "email": data.email, "role": data.role.strip().lower()}
         }
     except HTTPException: raise
     except Exception as e:
@@ -136,7 +136,7 @@ def login(data: LoginInput):
         token = make_token(user["id"], user["email"])
         return {
             "token": token,
-            "user": {"id": user["id"], "name": user["name"], "email": user["email"]}
+            "user": {"id": user["id"], "name": user["name"], "email": user["email"], "role": user.get("role", "student")}
         }
     except HTTPException: raise
     except Exception as e:
@@ -148,7 +148,7 @@ def get_me(current_user=Depends(get_current_user)):
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id, name, email, created_at FROM users WHERE id = %s",
+        cursor.execute("SELECT id, name, email, role, created_at FROM users WHERE id = %s",
                        (current_user["id"],))
         user = cursor.fetchone()
         cursor.close(); conn.close()
@@ -158,7 +158,7 @@ def get_me(current_user=Depends(get_current_user)):
     except Exception as e: raise HTTPException(500, str(e))
 
 # ════════════════════════════════════════════════════════════════════════════
-# STUDY PLANNER — PROGRESS & STREAK (saved to MySQL per user)
+# STUDY PLANNER — PROGRESS & STREAK
 # ════════════════════════════════════════════════════════════════════════════
 
 class TaskToggle(BaseModel):
@@ -168,9 +168,13 @@ class TaskToggle(BaseModel):
     xp: int
 
 class StreakSave(BaseModel):
-    date_key: str       # YYYY-MM-DD
+    date_key: str
     streak_count: int
     xp: int
+
+class ProgressUpdate(BaseModel):
+    xp: int
+    streak_count: int
 
 @app.post("/save-task")
 def save_task(data: TaskToggle, current_user=Depends(get_current_user)):
@@ -187,38 +191,89 @@ def save_task(data: TaskToggle, current_user=Depends(get_current_user)):
         return {"saved": True}
     except Exception as e: raise HTTPException(500, str(e))
 
+@app.post("/update-progress")
+def update_progress(data: ProgressUpdate, current_user=Depends(get_current_user)):
+    """
+    Called by StudyPlanGenerator whenever XP or streak changes.
+    Upserts into user_progress so Dashboard /my-progress always shows live data.
+    """
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_progress (
+                user_id INT PRIMARY KEY,
+                total_xp INT DEFAULT 0,
+                streak_count INT DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+        cursor.execute("""
+            INSERT INTO user_progress (user_id, total_xp, streak_count)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                total_xp = %s,
+                streak_count = %s,
+                updated_at = CURRENT_TIMESTAMP
+        """, (current_user["id"], data.xp, data.streak_count,
+              data.xp, data.streak_count))
+        conn.commit(); cursor.close(); conn.close()
+        return {"status": "ok", "xp": data.xp, "streak_count": data.streak_count}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, str(e))
+
 @app.get("/my-progress")
 def get_progress(current_user=Depends(get_current_user)):
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
-        # Get all tasks
+
+        # Ensure table exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_progress (
+                user_id INT PRIMARY KEY,
+                total_xp INT DEFAULT 0,
+                streak_count INT DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
+        # Get live XP + streak from user_progress (written by /update-progress)
+        cursor.execute(
+            "SELECT total_xp, streak_count FROM user_progress WHERE user_id = %s",
+            (current_user["id"],)
+        )
+        progress_row = cursor.fetchone()
+
+        # Also fetch task-level data (kept for backward compatibility)
         cursor.execute(
             "SELECT week_idx, task_idx, is_done, xp_earned FROM study_progress WHERE user_id = %s",
             (current_user["id"],)
         )
         rows = cursor.fetchall()
-        # Get latest streak
-        cursor.execute(
-            "SELECT streak_count, total_xp, date_key FROM streaks WHERE user_id = %s ORDER BY date_key DESC LIMIT 1",
-            (current_user["id"],)
-        )
-        streak_row = cursor.fetchone()
-        # Get all streak days (for computing current streak)
+
+        # Streak days from streaks table (kept for backward compatibility)
         cursor.execute(
             "SELECT date_key FROM streaks WHERE user_id = %s ORDER BY date_key DESC LIMIT 30",
             (current_user["id"],)
         )
         streak_days = [r["date_key"] for r in cursor.fetchall()]
+
         cursor.close(); conn.close()
 
         task_done = {f"{r['week_idx']}-{r['task_idx']}": bool(r['is_done']) for r in rows}
-        total_xp  = sum(r['xp_earned'] for r in rows if r['is_done'])
+
+        # Prefer user_progress values (synced in real-time) over computed totals
+        total_xp     = progress_row["total_xp"]     if progress_row else sum(r['xp_earned'] for r in rows if r['is_done'])
+        streak_count = progress_row["streak_count"]  if progress_row else 0
 
         return {
             "task_done": task_done,
             "total_xp": total_xp,
-            "streak_count": streak_row["streak_count"] if streak_row else 0,
+            "streak_count": streak_count,
             "streak_days": streak_days,
         }
     except Exception as e:
@@ -431,14 +486,23 @@ def get_metrics():
 def feature_importance():
     try:
         result = {}
-        for task, key in [("performance","perf_model"),("risk","risk_model")]:
+        for task, key in [("performance", "perf_model"), ("risk", "risk_model")]:
             model = artifacts.get(key)
             names = artifacts.get("feature_names", [])
-            if model and hasattr(model, "feature_importances_"):
+            if not model:
+                continue
+            if hasattr(model, "feature_importances_"):
                 imp = model.feature_importances_
-                result[task] = dict(sorted(zip(names, imp), key=lambda x: -x[1]))
+                result[task] = dict(sorted(zip(names, imp.tolist()), key=lambda x: -x[1]))
+            elif hasattr(model, "coef_"):
+                imp = np.mean(np.abs(model.coef_), axis=0)
+                result[task] = dict(sorted(zip(names, imp.tolist()), key=lambda x: -x[1]))
+            else:
+                imp = [1.0 / len(names)] * len(names)
+                result[task] = dict(zip(names, imp))
         return result
-    except Exception as e: raise HTTPException(500, str(e))
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 @app.get("/dataset-stats")
 def dataset_stats():
@@ -478,7 +542,7 @@ def debug_features():
 
 class SavePlanInput(BaseModel):
     profile: dict
-    plan_summary: dict  # targetScore, recommended_hrs, totalDays, weakAreas count
+    plan_summary: dict
 
 @app.post("/save-plan")
 def save_plan(data: SavePlanInput, current_user=Depends(get_current_user)):
@@ -496,8 +560,6 @@ def save_plan(data: SavePlanInput, current_user=Depends(get_current_user)):
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
-        # Delete old plan for this user (only keep latest)
-        cursor.execute("DELETE FROM study_plans WHERE user_id = %s", (current_user["id"],))
         cursor.execute("""
             INSERT INTO study_plans (user_id, profile_json, plan_summary_json)
             VALUES (%s, %s, %s)
@@ -516,7 +578,6 @@ def get_my_plan(current_user=Depends(get_current_user)):
         import json as json_mod
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
-        # Create table if not exists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS study_plans (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -552,8 +613,13 @@ def delete_plan(current_user=Depends(get_current_user)):
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM study_plans WHERE user_id = %s", (current_user["id"],))
-        # Also clear all task progress
         cursor.execute("DELETE FROM study_progress WHERE user_id = %s", (current_user["id"],))
+        # Also reset user_progress so XP and streak go back to 0 on dashboard
+        cursor.execute("""
+            INSERT INTO user_progress (user_id, total_xp, streak_count)
+            VALUES (%s, 0, 0)
+            ON DUPLICATE KEY UPDATE total_xp = 0, streak_count = 0, updated_at = CURRENT_TIMESTAMP
+        """, (current_user["id"],))
         conn.commit(); cursor.close(); conn.close()
         return {"deleted": True}
     except Exception as e:
