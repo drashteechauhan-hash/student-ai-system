@@ -3,9 +3,13 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const adminNav = [
-  { to: '/dashboard', icon: '📊', label: 'Overview' },
-  { to: '/analytics', icon: '📈', label: 'Analytics' },
-  { to: '/predict',   icon: '🔮', label: 'Predict', badge: 'AI' },
+  { to: '/dashboard',  icon: '📊', label: 'Overview' },
+  { to: '/analytics',  icon: '📈', label: 'Analytics' },
+  { to: '/predict',    icon: '🔮', label: 'Predict', badge: 'AI' },
+  { to: '/study-plan', icon: '📅', label: 'Study Planner' },
+  { to: '/whatif',     icon: '🔬', label: 'Simulator' },
+  { to: '/compare',    icon: '⚔️',  label: 'Compare' },
+  { to: '/about',      icon: 'ℹ️',  label: 'About' },
 ];
 
 const studentNav = [
@@ -55,7 +59,6 @@ export default function Sidebar({ user, onLogout }) {
 
   return (
     <nav className="navbar">
-      {/* ── Left: Brand ── */}
       <NavLink to="/dashboard" className="navbar-brand">
         <div className="navbar-brand-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -67,7 +70,6 @@ export default function Sidebar({ user, onLogout }) {
         <span className="navbar-brand-name">EduSense</span>
       </NavLink>
 
-      {/* ── Center: Nav links ── */}
       <div className="navbar-links">
         {currentNav.map(item => (
           <NavLink
@@ -82,25 +84,12 @@ export default function Sidebar({ user, onLogout }) {
         ))}
       </div>
 
-      {/* ── Right: User avatar + Hamburger ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-
-        {/* User Avatar */}
         <div ref={avatarRef} style={{ position: 'relative' }}>
           {user ? (
             <>
-              <button
-                className="navbar-user"
-                onClick={() => setShowLogout(o => !o)}
-              >
-                <div
-                  className="navbar-user-avatar"
-                  style={{
-                    background: isAdmin
-                      ? 'linear-gradient(135deg, #6366f1, #ec4899)'
-                      : 'linear-gradient(135deg, #0ea5e9, #6366f1)',
-                  }}
-                >
+              <button className="navbar-user" onClick={() => setShowLogout(o => !o)}>
+                <div className="navbar-user-avatar" style={{ background: isAdmin ? 'linear-gradient(135deg, #6366f1, #ec4899)' : 'linear-gradient(135deg, #0ea5e9, #6366f1)' }}>
                   {user.name ? user.name[0].toUpperCase() : '?'}
                 </div>
                 <span className="navbar-user-name">{user.name?.split(' ')[0]}</span>
@@ -140,13 +129,8 @@ export default function Sidebar({ user, onLogout }) {
           )}
         </div>
 
-        {/* ── Hamburger — far RIGHT ── */}
         <div ref={menuRef} style={{ position: 'relative' }}>
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            className="hamburger-btn"
-            aria-label="More options"
-          >
+          <button onClick={() => setMenuOpen(o => !o)} className="hamburger-btn" aria-label="More options">
             <span className={`ham-line ${menuOpen ? 'open' : ''}`} />
             <span className={`ham-line ${menuOpen ? 'open' : ''}`} />
             <span className={`ham-line ${menuOpen ? 'open' : ''}`} />
@@ -178,7 +162,6 @@ export default function Sidebar({ user, onLogout }) {
             )}
           </AnimatePresence>
         </div>
-
       </div>
     </nav>
   );
