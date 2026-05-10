@@ -48,8 +48,8 @@
   --blue:                 #3b82f6;
 
   --text:                 #f1f1f3;
-  --text2:                #9ca3af;
-  --text3:                #6b7280;
+  --text2:                #c4c9d4;
+  --text3:                #8b92a0;
 
   --radius:               20px;
   --radius-sm:            12px;
@@ -114,7 +114,6 @@ body::after {
   100% { transform: translate(30px, 20px) scale(0.9); }
 }
 
-/* Third orb — pink */
 .app-layout::before {
   content: '';
   position: fixed;
@@ -129,7 +128,6 @@ body::after {
   100% { transform: translate(-80px, 80px); }
 }
 
-/* Subtle dot grid */
 .app-layout {
   display: flex;
   flex-direction: column;
@@ -157,6 +155,30 @@ body::after {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── DASHBOARD GREETING TEXT FIX ── */
+.dashboard-date {
+  font-size: 13px;
+  color: #a78bfa !important;  /* bright purple, clearly visible */
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dashboard-greeting {
+  font-size: 34px;
+  font-weight: 800;
+  color: #ffffff !important;  /* pure white */
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.dashboard-subtitle {
+  color: #c4c9d4 !important;  /* much brighter than before */
+  font-size: 16px;
+  margin-top: 6px;
+}
+
 /* ── NAVBAR ── */
 .navbar {
   position: sticky; top: 0;
@@ -165,7 +187,7 @@ body::after {
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px 0 16px;
+  padding: 0 20px 0 20px;
   z-index: 200;
   border-bottom: 1px solid var(--border);
 }
@@ -205,9 +227,9 @@ body::after {
 .navbar-link .nav-icon { font-size: 15px; }
 .navbar-link:hover { color: var(--text); background: rgba(255,255,255,0.06); }
 .navbar-link.active {
-  color: var(--text);
-  background: rgba(139, 92, 246, 0.15);
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.35);
+  color: #fff;
+  background: rgba(139, 92, 246, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.45);
 }
 .navbar-badge {
   font-size: 9px; font-weight: 800;
@@ -231,7 +253,7 @@ body::after {
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
 }
-.navbar-user-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.navbar-user-name { font-size: 13px; font-weight: 600; color: #e2e8f0; }
 .admin-chip {
   font-size: 9px; padding: 2px 7px;
   background: rgba(251, 191, 36, 0.15);
@@ -251,7 +273,7 @@ body::after {
 
 .ham-line {
   display: block; width: 16px; height: 1.5px;
-  background: var(--text2); border-radius: 2px;
+  background: #c4c9d4; border-radius: 2px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
 }
@@ -272,18 +294,18 @@ body::after {
 }
 .dropdown-header {
   font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
-  text-transform: uppercase; color: var(--text3);
+  text-transform: uppercase; color: #8b92a0;
   padding: 4px 10px 10px; border-bottom: 1px solid var(--border);
   margin-bottom: 6px;
 }
 .dropdown-item {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 12px; border-radius: 10px;
-  text-decoration: none; color: var(--text2);
+  text-decoration: none; color: #c4c9d4;
   font-size: 13.5px; font-weight: 500;
   transition: var(--transition); cursor: pointer;
 }
-.dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+.dropdown-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
 .dropdown-item.active { background: rgba(139,92,246,0.15); color: #a78bfa; }
 .dropdown-item-icon { font-size: 16px; }
 
@@ -297,7 +319,7 @@ body::after {
 .logout-btn:hover { background: rgba(239, 68, 68, 0.22); }
 .cancel-btn {
   flex: 1; padding: 9px; font-size: 13px; font-weight: 700;
-  background: rgba(255,255,255,0.05); color: var(--text2);
+  background: rgba(255,255,255,0.05); color: #c4c9d4;
   border: 1px solid var(--border2); border-radius: 10px;
   cursor: pointer; transition: var(--transition); font-family: var(--font);
 }
@@ -327,10 +349,10 @@ body::after {
 .page-title {
   font-family: var(--font-display);
   font-size: 36px; font-weight: 800;
-  color: var(--text); letter-spacing: -0.8px;
+  color: #ffffff; letter-spacing: -0.8px;
   margin-bottom: 8px;
 }
-.page-subtitle { font-size: 15px; color: var(--text2); font-weight: 400; max-width: 580px; line-height: 1.65; }
+.page-subtitle { font-size: 15px; color: #c4c9d4; font-weight: 400; max-width: 580px; line-height: 1.65; }
 
 /* ── GRIDS ── */
 .grid-4   { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
@@ -350,15 +372,15 @@ body::after {
   border-color: var(--border-glow); transform: translateY(-3px);
   box-shadow: 0 10px 36px rgba(0,0,0,0.5), 0 0 20px rgba(139, 92, 246, 0.15);
 }
-.stat-value { font-family: var(--font-display); font-size: 38px; font-weight: 700; line-height: 1.1; margin: 10px 0 5px; color: var(--text); }
-.stat-label { font-size: 13px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-family: var(--font-display); font-size: 38px; font-weight: 700; line-height: 1.1; margin: 10px 0 5px; color: #ffffff; }
+.stat-label { font-size: 13px; color: #c4c9d4; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-change { font-size: 13px; margin-top: 6px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
 
 /* ── FORMS ── */
 .form-grid   { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
 .form-group  { display: flex; flex-direction: column; gap: 7px; }
-.form-label  { font-size: 12px; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; }
+.form-label  { font-size: 12px; font-weight: 700; color: #c4c9d4; letter-spacing: 0.5px; text-transform: uppercase; }
 
 .form-input, .form-select {
   padding: 13px 16px;
@@ -369,7 +391,7 @@ body::after {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
 }
-.form-input::placeholder { color: var(--text3); }
+.form-input::placeholder { color: #6b7280; }
 .form-input:hover, .form-select:hover { border-color: rgba(255,255,255,0.22); }
 .form-input:focus, .form-select:focus {
   border-color: var(--accent);
@@ -414,7 +436,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
 
 .form-section { margin-bottom: 32px; }
 .form-section-title {
-  font-size: 13px; font-weight: 700; color: var(--text);
+  font-size: 13px; font-weight: 700; color: #e2e8f0;
   margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
   padding-bottom: 10px; border-bottom: 1px solid var(--border);
   letter-spacing: 0.5px; text-transform: uppercase;
@@ -459,11 +481,11 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
   flex: 1; padding: 10px 14px; border: none;
   background: transparent; border-radius: 10px;
   font-family: var(--font); font-size: 13px; font-weight: 600;
-  color: var(--text2); cursor: pointer; transition: var(--transition);
+  color: #8b92a0; cursor: pointer; transition: var(--transition);
 }
-.tab-btn:hover { color: var(--text); }
+.tab-btn:hover { color: #e2e8f0; }
 .tab-btn.active {
-  background: var(--bg-card); color: var(--text);
+  background: var(--bg-card); color: #ffffff;
   box-shadow: 0 2px 12px rgba(0,0,0,0.3); border: 1px solid var(--border2);
 }
 
@@ -477,8 +499,8 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── RECHARTS ── */
-.recharts-text, .recharts-label { fill: var(--text2) !important; font-family: var(--font) !important; }
-.recharts-cartesian-axis-tick-value { fill: var(--text3) !important; font-size: 12px; }
+.recharts-text, .recharts-label { fill: #c4c9d4 !important; font-family: var(--font) !important; }
+.recharts-cartesian-axis-tick-value { fill: #8b92a0 !important; font-size: 12px; }
 .recharts-tooltip-wrapper .recharts-default-tooltip {
   background: rgba(12, 12, 20, 0.97) !important;
   backdrop-filter: blur(16px) !important;
