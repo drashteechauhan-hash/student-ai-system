@@ -15,13 +15,29 @@ export default function AnalyticsPage(){
     axios.get(`${API}/feature-importance`).then(r=>setShap(r.data)).catch(()=>{});
   },[]);
 
-  const demo={performance:{'Random Forest':{accuracy:0.88,precision:0.87,recall:0.88,f1_score:0.87,cv_mean:0.86},'Gradient Boosting':{accuracy:0.91,precision:0.91,recall:0.91,f1_score:0.90,cv_mean:0.89},best_model:'Gradient Boosting',classes:['High','Low','Medium']},risk:{'Random Forest':{accuracy:0.90,precision:0.89,recall:0.90,f1_score:0.89,cv_mean:0.88},'Gradient Boosting':{accuracy:0.93,precision:0.93,recall:0.93,f1_score:0.92,cv_mean:0.91},best_model:'Gradient Boosting',classes:['High Risk','Low Risk','Moderate Risk']}};
+  const demo={
+    performance:{
+      'Random Forest':{accuracy:0.88,precision:0.87,recall:0.88,f1_score:0.87,cv_mean:0.86},
+      'Linear Regression':{accuracy:0.82,precision:0.81,recall:0.82,f1_score:0.81,cv_mean:0.80},
+      'SVM':{accuracy:0.85,precision:0.84,recall:0.85,f1_score:0.84,cv_mean:0.83},
+      best_model:'Random Forest',
+      classes:['High','Low','Medium']
+    },
+    risk:{
+      'Random Forest':{accuracy:0.90,precision:0.89,recall:0.90,f1_score:0.89,cv_mean:0.88},
+      'Linear Regression':{accuracy:0.84,precision:0.83,recall:0.84,f1_score:0.83,cv_mean:0.82},
+      'SVM':{accuracy:0.87,precision:0.86,recall:0.87,f1_score:0.86,cv_mean:0.85},
+      best_model:'Random Forest',
+      classes:['High Risk','Low Risk','Moderate Risk']
+    }
+  };
+
   const data=metrics||demo;
   const taskData=data[task]||{};
   const modelKeys=Object.keys(taskData).filter(k=>!['best_model','classes','shap_importance'].includes(k));
   const barData=modelKeys.map(n=>({name:n.split(' ')[0],Accuracy:Math.round((taskData[n]?.accuracy||0)*100),F1:Math.round((taskData[n]?.f1_score||0)*100),Precision:Math.round((taskData[n]?.precision||0)*100),CV:Math.round((taskData[n]?.cv_mean||0)*100)}));
   const shapData=Object.entries(shap?.[task]||taskData.shap_importance||{}).slice(0,8).map(([k,v])=>({name:k.length>22?k.slice(0,20)+'…':k,value:Math.round(v*1000)/1000}));
-  
+
   const TT=({active,payload,label})=>active&&payload?.length?(<div style={{background:'var(--bg-elevated)',border:'1px solid var(--border2)',borderRadius:'12px',padding:'12px 16px',fontSize:13,boxShadow:'var(--shadow-md)',backdropFilter:'blur(12px)'}}><p style={{color:'var(--text2)',marginBottom:6,fontWeight:600}}>{label}</p>{payload.map(p=><p key={p.name} style={{color:p.color,margin:'4px 0'}}>{p.name}: <b style={{color:'var(--text)'}}>{p.value}%</b></p>)}</div>):null;
 
   const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
@@ -31,7 +47,7 @@ export default function AnalyticsPage(){
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="fade-in">
       <motion.div variants={itemVariants} className="page-header">
         <h1 className="page-title">Model Analytics</h1>
-        <p className="page-subtitle">Performance metrics for Random Forest and Gradient Boosting trained on 238 students</p>
+        <p className="page-subtitle">Performance metrics for Random Forest, Linear Regression and SVM trained on 238 students</p>
       </motion.div>
 
       {!metrics&&<motion.div variants={itemVariants} style={{padding:'12px 16px',background:'rgba(245, 158, 11, 0.1)',border:'1px solid rgba(245, 158, 11, 0.3)',borderRadius:'12px',marginBottom:24,fontSize:14,color:'var(--yellow)',fontWeight:500,backdropFilter:'blur(4px)'}}>⚠️ Showing demo data — run python ml_pipeline.py to see real results</motion.div>}
@@ -48,10 +64,10 @@ export default function AnalyticsPage(){
         <div style={{fontSize:48, filter:'drop-shadow(0 0 20px rgba(139, 92, 246, 0.5))'}}>🏆</div>
         <div>
           <div style={{fontSize:12,color:'var(--text3)',marginBottom:4,fontWeight:700,letterSpacing:'1px'}}>BEST MODEL</div>
-          <div style={{fontSize:24,fontWeight:700,color:'var(--text)'}}>{taskData.best_model||'Gradient Boosting'}</div>
+          <div style={{fontSize:24,fontWeight:700,color:'var(--text)'}}>{taskData.best_model||'Random Forest'}</div>
         </div>
         <div style={{display:'flex',gap:32,marginLeft:'auto'}}>
-          {taskData[taskData.best_model||'Gradient Boosting']&&['accuracy','f1_score','precision','recall'].map(m=>(
+          {taskData[taskData.best_model||'Random Forest']&&['accuracy','f1_score','precision','recall'].map(m=>(
             <div key={m} style={{textAlign:'center'}}>
               <div style={{fontSize:28,fontWeight:700,color:'var(--accent)',textShadow:'0 0 15px var(--accent-glow)'}}>{Math.round((taskData[taskData.best_model]?.[m]||0)*100)}%</div>
               <div style={{fontSize:12,color:'var(--text2)',textTransform:'capitalize',fontWeight:500}}>{m.replace('_',' ')}</div>
